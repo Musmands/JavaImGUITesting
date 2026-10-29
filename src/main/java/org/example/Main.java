@@ -4,6 +4,8 @@ import imgui.ImGui;
 import imgui.app.Application;
 import imgui.app.Configuration;
 
+import org.lwjgl.glfw.GLFW;
+
 public class Main extends Application {
 
     @Override

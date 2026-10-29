@@ -16,6 +16,7 @@ dependencies {
 
     implementation("io.github.spair:imgui-java-binding:1.92.0")
     implementation("io.github.spair:imgui-java-lwjgl3:1.92.0")
+    implementation("io.github.spair:imgui-java-app:1.92.0")
 
 
     implementation(platform("org.lwjgl:lwjgl-bom:3.4.1"))

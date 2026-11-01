@@ -42,7 +42,21 @@ public class Main{
             ImGui.text(String.format("FPS: %.1f", ImGui.getIO().getFramerate()));
             ImGui.text(String.format("Frame Time: %.3f ms", 1000.0f / ImGui.getIO().getFramerate()));
             ImGui.text("Diddy sees me");
-            ImGui.text(String.format("Ram used: %.3f MB",(double) HWMonitor.getData(MT_RAM_USED_MB)));
+
+
+            ImGui.text("RAM TRACKING:");
+            if (ImGui.button("START")){
+                System.out.println("Adding ram used");
+                HWMonitor.addTask(HWT_RAM_USED);
+            }
+            if (ImGui.button("STOP")){
+                System.out.println("Removing ram used");
+                HWMonitor.removeTask(HWT_RAM_USED);
+
+            }
+            ImGui.separator();
+            ImGui.text("Tracking stats:");
+            ImGui.text(String.format("Ram used: %.3f MB", (double) HWMonitor.getData(MT_RAM_USED_MB)));
 
 
             ImGui.end();
@@ -99,7 +113,6 @@ public class Main{
         System.out.println("Started ImGui correctly, waiting for bindings:");
     }
     private void initHwMonitor(){
-        HWMonitor.addTask(HWT_RAM_USED);
     }
     public void run(){
         initWindow();

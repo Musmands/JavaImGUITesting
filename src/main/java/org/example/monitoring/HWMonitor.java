@@ -1,5 +1,6 @@
 package org.example.monitoring;
 
+import java.text.Format;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -11,7 +12,7 @@ public class HWMonitor {
     private static final HWMonitor INSTANCE = new HWMonitor();
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final List<Runnable> hwTasks = new CopyOnWriteArrayList<>();
+    private final List<HWTasks> hwTasks = new CopyOnWriteArrayList<>();
     private final AtomicReferenceArray<Object> hwValues = new AtomicReferenceArray<>(MetricType.values().length);
 
     private long pollingRate = 1000;
@@ -22,22 +23,27 @@ public class HWMonitor {
         scheduler.scheduleAtFixedRate(this::hwTasklist, 0, pollingRate, TimeUnit.MILLISECONDS);
     }
     private void hwTasklist(){
-        for(Runnable task : hwTasks){
+        for(HWTasks task : hwTasks){
             try {
-                task.run();
+                task.poll();
             } catch (Exception e){
                 e.printStackTrace();
             }
         }
     }
-    private static HWMonitor obj(){
-        return INSTANCE;
-    } // Static access key
     // INIT
 
     public static void addTask(HWTasks key){
         if (key != null && !INSTANCE.hwTasks.contains(key)){
-            INSTANCE.hwTasks.add(key::poll);
+            INSTANCE.hwTasks.add(key);
+        }
+    }
+    public static void removeTask(HWTasks key){
+        if (key != null){
+            boolean removed = INSTANCE.hwTasks.remove(key);
+            if (!removed){
+                System.err.printf("Error removing task: %s%n " , key.name());
+            }
         }
     }
     public static void runTask(HWTasks key){
@@ -73,7 +79,10 @@ public class HWMonitor {
     //Getters
     @SuppressWarnings("unchecked")
     public static Object getData(MetricType key){
-        return INSTANCE.hwValues.get(key.ordinal());
+        Object val = INSTANCE.hwValues.get(key.ordinal());
+        return val != null
+                ? val
+                : key.getDefaultValue();
     }
     //Setters
     public static void setPollingRate(int rate){
@@ -88,7 +97,7 @@ public class HWMonitor {
     @Deprecated
     public static void addTask(Runnable function){
         if (function != null){
-            INSTANCE.hwTasks.add(function);
+            //INSTANCE.hwTasks.add(function);
         }
     }
     @Deprecated

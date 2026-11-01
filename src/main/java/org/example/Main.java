@@ -1,31 +1,124 @@
 package org.example;
 
+
 import imgui.ImGui;
-import imgui.app.Application;
-import imgui.app.Configuration;
+import imgui.gl3.ImGuiImplGl3;
+import imgui.glfw.ImGuiImplGlfw;
+import org.example.monitoring.HWMonitor;
 
-public class Main extends Application {
+import static org.example.monitoring.MetricType.*;
+import static org.example.monitoring.HWTasks.*;
 
-    @Override
-    protected void configure(Configuration config) {
+import org.lwjgl.opengl.GL;
+
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.*;
+
+
+public class Main{
+    private long windowHandle;
+
+    private final ImGuiImplGlfw imguiGLFW = new ImGuiImplGlfw();
+    private final ImGuiImplGl3 imGuiGl3 = new ImGuiImplGl3();
+
+
+
+    public static void main(String[] args){
+        new Main().run();
     }
 
-    @Override
-    public void process() {
-        // This runs every single frame. Write your UI code here!
-        ImGui.begin("Control Panel");
+    private void mainLoop() {
 
-        ImGui.text("Hello, ImGui is working!");
+        glClearColor(.2f,.2f,.2f, .0f);
 
-        if (ImGui.button("Click Me")) {
-            System.out.println("Button was clicked!");
+        while (!glfwWindowShouldClose(windowHandle)) {
+            glfwPollEvents();
+            // Put imgui stuff here
+            imGuiGl3.newFrame();
+            imguiGLFW.newFrame();
+            ImGui.newFrame();
+
+            ImGui.begin("Diagnostics");
+            ImGui.text(String.format("FPS: %.1f", ImGui.getIO().getFramerate()));
+            ImGui.text(String.format("Frame Time: %.3f ms", 1000.0f / ImGui.getIO().getFramerate()));
+            ImGui.text("Diddy sees me");
+            ImGui.text(String.format("Ram used: %.3f MB",(double) HWMonitor.getData(MT_RAM_USED_MB)));
+
+
+            ImGui.end();
+
+
+            // Put imgui stuff here
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            ImGui.render();
+            imGuiGl3.renderDrawData(ImGui.getDrawData());
+
+            glfwSwapBuffers(windowHandle);
+        }
+    }
+
+
+    //Boiler Plate
+    private void initWindow(){
+        if (!glfwInit()){
+            throw new IllegalStateException("Unable to start GLFW");
         }
 
-        ImGui.end();
+        //Sets the correct openGl version
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); //Selects OpenGL version 3.3
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); //
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // Selects BareBones OpenGL 3.3
+
+        //PreConfig
+        glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // Allows the frame to be transparent
+
+        //Makes the window
+        windowHandle = glfwCreateWindow(700, 500, "Bare Bones ImGui", 0, 0);
+        if (windowHandle == 0) {
+            throw new RuntimeException("Failed to create window");
+        }
+
+        //PostConfig
+        glfwMakeContextCurrent(windowHandle); //Binds window to CPU thread
+        glfwShowWindow(windowHandle); //Makes it visible
+        glfwSwapInterval(1); //VSYNC ON
+        GL.createCapabilities(); //Hooks onto the correct OPENGL with your GPU
+
+        //Blending for semi transparent
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        System.out.println("Started Window with no problems");
     }
+    private void initImGui() {
+        ImGui.createContext();
+        imguiGLFW.init(windowHandle, true);
+        imGuiGl3.init("#version 330");
 
+        System.out.println("Started ImGui correctly, waiting for bindings:");
+    }
+    private void initHwMonitor(){
+        HWMonitor.addTask(HWT_RAM_USED);
+    }
+    public void run(){
+        initWindow();
+        initHwMonitor();
+        initImGui();
+        mainLoop();
+        cleanup();
+    }
+    private void cleanup() {
+        System.out.println("Starting Shutdown Sequence");
 
-    public static void main(String[] args) {
-        launch(new Main());
+        imGuiGl3.shutdown(); //Shutdown OPENGL
+        imguiGLFW.shutdown(); //Shutdown GLFW
+        ImGui.destroyContext();
+        glfwDestroyWindow(windowHandle);
+        glfwTerminate();
+
+        HWMonitor.stop();
+
+        System.out.println("Shutdown completed successfully");
     }
 }

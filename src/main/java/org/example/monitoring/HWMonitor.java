@@ -14,12 +14,12 @@ public class HWMonitor {
     private final List<Runnable> hwTasks = new CopyOnWriteArrayList<>();
     private final AtomicReferenceArray<Object> hwValues = new AtomicReferenceArray<>(MetricType.values().length);
 
-    private final long POLLING_RATE = 1000;
+    private long pollingRate = 1000;
 
     // INIT
     private HWMonitor(){
         //Starts the loop
-        scheduler.scheduleAtFixedRate(this::hwTasklist, 0, POLLING_RATE, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(this::hwTasklist, 0, pollingRate, TimeUnit.MILLISECONDS);
     }
     private void hwTasklist(){
         for(Runnable task : hwTasks){
@@ -36,7 +36,7 @@ public class HWMonitor {
     // INIT
 
     public static void addTask(HWTasks key){
-        if (key != null){
+        if (key != null && !INSTANCE.hwTasks.contains(key)){
             INSTANCE.hwTasks.add(key::poll);
         }
     }
@@ -74,6 +74,10 @@ public class HWMonitor {
     @SuppressWarnings("unchecked")
     public static Object getData(MetricType key){
         return INSTANCE.hwValues.get(key.ordinal());
+    }
+    //Setters
+    public static void setPollingRate(int rate){
+        INSTANCE.pollingRate = rate;
     }
 
     /**

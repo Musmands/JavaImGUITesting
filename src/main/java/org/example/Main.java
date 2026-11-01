@@ -2,12 +2,12 @@ package org.example;
 
 
 import imgui.ImGui;
+import imgui.flag.ImGuiCol;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
+import org.example.UI.Diagnostics;
+import org.example.UI.Stuff;
 import org.example.monitoring.HWMonitor;
-
-import static org.example.monitoring.MetricType.*;
-import static org.example.monitoring.HWTasks.*;
 
 import org.lwjgl.opengl.GL;
 
@@ -21,52 +21,31 @@ public class Main{
     private final ImGuiImplGlfw imguiGLFW = new ImGuiImplGlfw();
     private final ImGuiImplGl3 imGuiGl3 = new ImGuiImplGl3();
 
-
-
     public static void main(String[] args){
         new Main().run();
     }
 
     private void mainLoop() {
 
-        glClearColor(.2f,.2f,.2f, .0f);
+        glClearColor(.2f,.2f,.2f, 0.2f);
 
         while (!glfwWindowShouldClose(windowHandle)) {
             glfwPollEvents();
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
             // Put imgui stuff here
             imGuiGl3.newFrame();
             imguiGLFW.newFrame();
             ImGui.newFrame();
 
-            ImGui.begin("Diagnostics");
-            ImGui.text(String.format("FPS: %.1f", ImGui.getIO().getFramerate()));
-            ImGui.text(String.format("Frame Time: %.3f ms", 1000.0f / ImGui.getIO().getFramerate()));
-            ImGui.text("Diddy sees me");
-
-
-            ImGui.text("RAM TRACKING:");
-            if (ImGui.button("START")){
-                System.out.println("Adding ram used");
-                HWMonitor.addTask(HWT_RAM_USED);
-            }
-            if (ImGui.button("STOP")){
-                System.out.println("Removing ram used");
-                HWMonitor.removeTask(HWT_RAM_USED);
-
-            }
-            ImGui.separator();
-            ImGui.text("Tracking stats:");
-            ImGui.text(String.format("Ram used: %.3f MB", (double) HWMonitor.getData(MT_RAM_USED_MB)));
-
-
-            ImGui.end();
-
-
-            // Put imgui stuff here
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // MINI CLASSES
+            Diagnostics.render();
+            Stuff.render();
+            // MINI CLASSES
 
             ImGui.render();
             imGuiGl3.renderDrawData(ImGui.getDrawData());
+            // Put imgui stuff here
 
             glfwSwapBuffers(windowHandle);
         }
@@ -109,6 +88,8 @@ public class Main{
         ImGui.createContext();
         imguiGLFW.init(windowHandle, true);
         imGuiGl3.init("#version 330");
+
+        ImGui.getStyle().setColor(ImGuiCol.TitleBg, 0.15f, 0.25f, 0.35f, 1.0f);
 
         System.out.println("Started ImGui correctly, waiting for bindings:");
     }

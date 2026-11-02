@@ -28,7 +28,7 @@ public class Main{
 
     private void mainLoop() {
 
-        glClearColor(.2f,.2f,.2f, 0.2f);
+        glClearColor(.1f,.1f,.1f, 0.0f);
 
         while (!glfwWindowShouldClose(windowHandle)) {
             glfwPollEvents();

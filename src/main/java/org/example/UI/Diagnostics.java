@@ -3,6 +3,9 @@ package org.example.UI;
 import imgui.ImGui;
 import org.example.monitoring.HWMonitor;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 import static org.example.monitoring.HWTasks.HWT_RAM_USED;
 import static org.example.monitoring.MetricType.MT_RAM_USED_MB;
 
@@ -31,10 +34,20 @@ public class Diagnostics {
                 HWMonitor.removeTask(HWT_RAM_USED);
 
             }
+
+            ImGui.sameLine();
+
+            if (ImGui.button("RESET")){
+                System.out.println("Resetting ram");
+                HWMonitor.set(MT_RAM_USED_MB, 0.0);
+            }
+
             ImGui.separator();
             ImGui.text("Tracking stats:");
             ImGui.text(String.format("Ram used: %.3f MB", (double) HWMonitor.getData(MT_RAM_USED_MB)));
         }
         ImGui.end();
     }
+
+
 }

@@ -51,6 +51,12 @@ public class HWMonitor {
             key.poll();
         }
     }
+    public static void runTask(HWPTASKS key, Object object){
+        if (key != null){
+            key.poll(object);
+        }
+    }
+
     public static List getTasks(){
         return INSTANCE.hwTasks;
     }

@@ -1,5 +1,8 @@
 package org.example.monitoring;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 public enum HWTasks {
     HWT_RAM_USED {
         @Override

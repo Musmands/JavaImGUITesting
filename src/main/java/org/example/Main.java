@@ -9,6 +9,7 @@ import org.example.UI.Diagnostics;
 import org.example.UI.Stuff;
 import org.example.monitoring.HWMonitor;
 
+import org.example.monitoring.HWTasks;
 import org.lwjgl.opengl.GL;
 
 import static org.lwjgl.glfw.GLFW.*;

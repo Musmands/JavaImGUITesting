@@ -66,11 +66,14 @@ public class Diagnostics {
     public static void pollValues(){
         timer += ImGui.getIO().getDeltaTime();
         if (timer >= INTERVAL_MS){
-            timer = 0;
+            timer -= INTERVAL_MS;
+
+            /*
             // Get new values
             fpsF = String.format("FPS: %.2f" , ImGui.getIO().getFramerate());
             frameTime = String.format("Frame Time: %.3f ms", 1000.0f / ImGui.getIO().getFramerate());
             ramHeapTracked = String.format("Ram used: %.3f MB", (double) HWMonitor.getData(MT_RAM_USED_MB));
+            */
         }
     }
 

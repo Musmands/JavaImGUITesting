@@ -3,9 +3,6 @@ package org.example.UI;
 import imgui.ImGui;
 import org.example.monitoring.HWMonitor;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 import static org.example.monitoring.HWTasks.HWT_RAM_USED;
 import static org.example.monitoring.MetricType.MT_RAM_USED_MB;
 
@@ -13,11 +10,27 @@ public class Diagnostics {
     private Diagnostics(){
         throw new AssertionError("You cannot make a member of this class");
     }
+
+    private final static double INTERVAL = 200;
+    private final static double INTERVAL_MS = INTERVAL/1000;
+
+    private static double timer;
+
+    private static String fpsF = "";
+    private static String frameTime = "";
+    private static String ramHeapTracked = "";
+
+
     public static void render(){
 
+        //init
+
         if (ImGui.begin("Diagnostics")){
-            ImGui.text(String.format("FPS: %.1f", ImGui.getIO().getFramerate()));
-            ImGui.text(String.format("Frame Time: %.3f ms", 1000.0f / ImGui.getIO().getFramerate()));
+
+            pollValues();
+
+            ImGui.text(fpsF);
+            ImGui.text(frameTime);
             ImGui.text("Diddy sees me");
 
 
@@ -44,9 +57,20 @@ public class Diagnostics {
 
             ImGui.separator();
             ImGui.text("Tracking stats:");
-            ImGui.text(String.format("Ram used: %.3f MB", (double) HWMonitor.getData(MT_RAM_USED_MB)));
+            ImGui.text(ramHeapTracked);
+
+            ImGui.end();
         }
-        ImGui.end();
+    }
+
+    public static void pollValues(){
+        timer += ImGui.getIO().getDeltaTime();
+        if (timer >= INTERVAL_MS){
+            // Get new values
+            fpsF = String.format("FPS: %.2f" , ImGui.getIO().getFramerate());
+            frameTime = String.format("Frame Time: %.3f ms", 1000.0f / ImGui.getIO().getFramerate());
+            ramHeapTracked = String.format("Ram used: %.3f MB", (double) HWMonitor.getData(MT_RAM_USED_MB));
+        }
     }
 
 

@@ -11,7 +11,7 @@ public class Diagnostics {
         throw new AssertionError("You cannot make a member of this class");
     }
 
-    private final static double INTERVAL = 200;
+    private final static double INTERVAL = 100;
     private final static double INTERVAL_MS = INTERVAL/1000;
 
     private static double timer;
@@ -66,6 +66,7 @@ public class Diagnostics {
     public static void pollValues(){
         timer += ImGui.getIO().getDeltaTime();
         if (timer >= INTERVAL_MS){
+            timer = 0;
             // Get new values
             fpsF = String.format("FPS: %.2f" , ImGui.getIO().getFramerate());
             frameTime = String.format("Frame Time: %.3f ms", 1000.0f / ImGui.getIO().getFramerate());

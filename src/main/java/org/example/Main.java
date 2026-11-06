@@ -2,7 +2,9 @@ package org.example;
 
 
 import imgui.ImGui;
+import imgui.ImGuiViewport;
 import imgui.flag.ImGuiCol;
+import imgui.flag.ImGuiViewportFlags;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
 import org.example.UI.Diagnostics;
@@ -38,25 +40,39 @@ public class Main{
     }
 
     private void mainLoop() {
-        glClearColor(.2f,.2f,.2f, 0.0f);
+        glClearColor(.0f,.0f,.0f, 0.0f);
+
+        ImGuiViewport viewport = ImGui.getMainViewport();
+        viewport.addFlags(ImGuiViewportFlags.NoInputs);
 
         while (!glfwWindowShouldClose(windowHandle)) {
             glfwPollEvents();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
             // Put imgui stuff here
             imGuiGl3.newFrame();
             imguiGLFW.newFrame();
             ImGui.newFrame();
 
+            //SYSTEM IO HANDLER
+            boolean wantIn = ImGui.getIO().getWantCaptureMouse();
+            boolean focused = glfwGetWindowAttrib(windowHandle, GLFW_FOCUSED) == GLFW_FALSE;
+
+            if (!wantIn){
+                viewport.addFlags(ImGuiViewportFlags.NoInputs);
+            }
             // MINI CLASSES
             Diagnostics.render();
             Stuff.render();
             // MINI CLASSES
 
+
             ImGui.render();
             imGuiGl3.renderDrawData(ImGui.getDrawData());
             // Put imgui stuff here
+
+
 
             glfwSwapBuffers(windowHandle);
         }
@@ -93,7 +109,7 @@ public class Main{
 
         //PreConfig
         glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // Allows the frame to be transparent
-        //glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
         glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
         //glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
@@ -104,7 +120,7 @@ public class Main{
         int width = vidMode.width();
         int height = vidMode.height();
 
-        windowHandle = glfwCreateWindow(500, 500, "Bare Bones ImGui", 0, 0);
+        windowHandle = glfwCreateWindow(width, height-2, "Bare Bones ImGui", 0, 0);
         if (windowHandle == 0) {
             throw new RuntimeException("Failed to create window");
         }
@@ -112,7 +128,7 @@ public class Main{
         hwnd = GLFWNativeWin32.glfwGetWin32Window(windowHandle);
 
         //PostConfig
-        //glfwSetWindowAttrib(windowHandle, GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
+        glfwSetWindowAttrib(windowHandle, GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
         glfwMakeContextCurrent(windowHandle); //Binds window to CPU thread
         glfwShowWindow(windowHandle); //Makes it visible
         glfwSwapInterval(1); //VSYNC ON
@@ -122,7 +138,6 @@ public class Main{
         //Blending for semi transparent
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 
         System.out.println("Started Window with no problems");
     }

@@ -2,6 +2,7 @@ package org.example.UI;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiTreeNodeFlags;
+import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImString;
 import org.example.monitoring.HWMonitor;
 import oshi.hardware.NetworkIF;

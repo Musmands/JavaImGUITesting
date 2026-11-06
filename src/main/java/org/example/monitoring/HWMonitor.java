@@ -1,9 +1,7 @@
 package org.example.monitoring;
 
-import java.text.Format;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
  * This class monitors hardware, it can be used or not used
@@ -13,7 +11,7 @@ public class HWMonitor {
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final List<HWTasks> hwTasks = new CopyOnWriteArrayList<>();
-    private final AtomicReferenceArray<Object> hwValues = new AtomicReferenceArray<>(MetricType.values().length);
+    private final double[] hwValues = new double[HWDoubles.values().length];
 
     private long pollingRate = 1000;
 
@@ -46,16 +44,6 @@ public class HWMonitor {
             }
         }
     }
-    public static void runTask(HWTasks key){
-        if (key != null){
-            key.poll();
-        }
-    }
-    public static void runTask(HWPTASKS key, Object object){
-        if (key != null){
-            key.poll(object);
-        }
-    }
 
     public static List getTasks(){
         return INSTANCE.hwTasks;
@@ -67,8 +55,8 @@ public class HWMonitor {
         }
     }
 
-    public static void set(MetricType key, Object value) {
-        INSTANCE.hwValues.set(key.ordinal(), value);
+    public static void set(HWDoubles key, double value) {
+        INSTANCE.hwValues[key.ordinal()] = value;
     }
 
     //Formatters
@@ -84,16 +72,14 @@ public class HWMonitor {
 
     //Getters
     @SuppressWarnings("unchecked")
-    public static Object getData(MetricType key){
-        Object val = INSTANCE.hwValues.get(key.ordinal());
+    public static Object getData(HWDoubles key){
+        Object val = INSTANCE.hwValues[key.ordinal()];
         return val != null
                 ? val
                 : key.getDefaultValue();
     }
     //Setters
-    public static void setPollingRate(int rate){
-        INSTANCE.pollingRate = rate;
-    }
+    //MAKE POLLING RATE IMPLEMENTATION
 
     /**
      * @deprecated

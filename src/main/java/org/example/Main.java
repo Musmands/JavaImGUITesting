@@ -10,7 +10,12 @@ import org.example.UI.Stuff;
 import org.example.monitoring.HWMonitor;
 
 import org.example.monitoring.HWTasks;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWMouseButtonCallback;
+import org.lwjgl.glfw.GLFWNativeWin32;
+import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.system.windows.User32;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -22,13 +27,18 @@ public class Main{
     private final ImGuiImplGlfw imguiGLFW = new ImGuiImplGlfw();
     private final ImGuiImplGl3 imGuiGl3 = new ImGuiImplGl3();
 
+    private boolean menuOpen = false;
+    private boolean lastKeyState = false;
+
+    long hwnd;
+    // Constants for Win32 styles
+
     public static void main(String[] args){
         new Main().run();
     }
 
     private void mainLoop() {
-
-        glClearColor(.1f,.1f,.1f, 0.0f);
+        glClearColor(.2f,.2f,.2f, 0.0f);
 
         while (!glfwWindowShouldClose(windowHandle)) {
             glfwPollEvents();
@@ -52,6 +62,23 @@ public class Main{
         }
     }
 
+    //Window click through
+    public void setClickThru(long hwnd, boolean clickThrough){
+        long exStyle = org.lwjgl.system.windows.User32.GetWindowLongPtr(hwnd, User32.GWL_EXSTYLE);
+
+        if (clickThrough) {
+            User32.SetWindowLongPtr(null, hwnd, User32.GWL_EXSTYLE, exStyle | User32.WS_EX_TRANSPARENT | User32.WS_EX_LAYERED);
+            glfwSetWindowAttrib(windowHandle, GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
+            System.out.println("Overlay is now CLICK-THROUGH");
+        } else {
+            User32.SetWindowLongPtr(null, hwnd, User32.GWL_EXSTYLE, exStyle & ~User32.WS_EX_TRANSPARENT);
+            glfwSetWindowAttrib(windowHandle, GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);
+            System.out.println("Overlay is now INTERACTIVE");
+        }
+
+        User32.SetWindowPos(null, hwnd, 0 , 0, 0, 0, 0,
+                User32.SWP_NOMOVE | User32.SWP_NOSIZE | User32.SWP_NOZORDER | User32.SWP_FRAMECHANGED);
+    }
 
     //Boiler Plate
     private void initWindow(){
@@ -66,22 +93,36 @@ public class Main{
 
         //PreConfig
         glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // Allows the frame to be transparent
+        //glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+        //glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
         //Makes the window
-        windowHandle = glfwCreateWindow(700, 500, "Bare Bones ImGui", 0, 0);
+        long primaryMonitor = GLFW.glfwGetPrimaryMonitor();
+        GLFWVidMode vidMode = GLFW.glfwGetVideoMode(primaryMonitor);
+
+        int width = vidMode.width();
+        int height = vidMode.height();
+
+        windowHandle = glfwCreateWindow(500, 500, "Bare Bones ImGui", 0, 0);
         if (windowHandle == 0) {
             throw new RuntimeException("Failed to create window");
         }
 
+        hwnd = GLFWNativeWin32.glfwGetWin32Window(windowHandle);
+
         //PostConfig
+        //glfwSetWindowAttrib(windowHandle, GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
         glfwMakeContextCurrent(windowHandle); //Binds window to CPU thread
         glfwShowWindow(windowHandle); //Makes it visible
         glfwSwapInterval(1); //VSYNC ON
         GL.createCapabilities(); //Hooks onto the correct OPENGL with your GPU
 
+
         //Blending for semi transparent
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
         System.out.println("Started Window with no problems");
     }
@@ -102,6 +143,7 @@ public class Main{
         initImGui();
         mainLoop();
         cleanup();
+
     }
     private void cleanup() {
         System.out.println("Starting Shutdown Sequence");

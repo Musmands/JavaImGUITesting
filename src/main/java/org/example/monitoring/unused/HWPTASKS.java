@@ -1,4 +1,4 @@
-package org.example.monitoring;
+package org.example.monitoring.unused;
 
 public enum HWPTASKS {
     HWTP_Get_WindowID{

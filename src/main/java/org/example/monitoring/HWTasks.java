@@ -1,8 +1,5 @@
 package org.example.monitoring;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 public enum HWTasks {
     HWT_RAM_USED {
         @Override
@@ -14,10 +11,10 @@ public enum HWTasks {
             double usedGB = HWMonitor.byteToGB(usedHeap);
 
             // Sends the data back to the monitor using 'this' as the key
-            HWMonitor.set(MetricType.MT_RAM_USED_RAW, usedHeap);
-            HWMonitor.set(MetricType.MT_RAM_USED_KB, usedMB);
-            HWMonitor.set(MetricType.MT_RAM_USED_MB, usedMB);
-            HWMonitor.set(MetricType.MT_RAM_USED_GB, usedMB);
+            HWMonitor.set(HWDoubles.MT_RAM_USED_RAW, (double) usedHeap);
+            HWMonitor.set(HWDoubles.MT_RAM_USED_KB, usedKB);
+            HWMonitor.set(HWDoubles.MT_RAM_USED_MB, usedMB);
+            HWMonitor.set(HWDoubles.MT_RAM_USED_GB, usedGB);
         }
     };
 

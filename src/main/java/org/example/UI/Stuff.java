@@ -26,6 +26,8 @@ public class Stuff {
                 ImGui.text(text);
             }
 
+            windowBounds.update();
+
             ImGui.text("""
                     Hello! this is a test! Honestly I have been working on my prose,
                     the flow- variance of my words. I demand elegance. I demand continuity.

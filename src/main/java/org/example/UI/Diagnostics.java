@@ -1,6 +1,8 @@
 package org.example.UI;
 
 import imgui.ImGui;
+import imgui.ImVec2;
+import imgui.ImVec4;
 import imgui.flag.ImGuiTreeNodeFlags;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImString;
@@ -12,29 +14,35 @@ import static org.example.monitoring.HWTasks.HWT_RAM_USED;
 import static org.example.monitoring.HWDoubles.MT_RAM_USED_MB;
 
 public class Diagnostics {
-    private Diagnostics(){
-        throw new AssertionError("You cannot make a member of this class");
+    private static final Diagnostics INSTANCE = new Diagnostics();
+
+    private final double INTERVAL = 50;
+    private final double INTERVAL_MS = INTERVAL/1000;
+
+    private double timer;
+
+    private String fpsF = "";
+    private String frameTime = "";
+    private String ramHeapTracked = "";
+
+    private final ImString input = new ImString(64);
+
+    private final WindowBounds windowBounds = new WindowBounds();
+
+    public static void run(){
+        INSTANCE.render();
+    }
+    public static boolean inBounds(short x, short y){
+        return INSTANCE.windowBounds.inBounds(x, y);
     }
 
-    private final static double INTERVAL = 50;
-    private final static double INTERVAL_MS = INTERVAL/1000;
-
-    private static double timer;
-
-    private static String fpsF = "";
-    private static String frameTime = "";
-    private static String ramHeapTracked = "";
-
-    private static final ImString input = new ImString(64);
-
-
-    public static void render(){
-
+    //Render MiniLoop
+    public void render(){
         //init
-
         if (ImGui.begin("Diagnostics")){
-
             pollValues();
+
+            windowBounds.update();
 
             if (ImGui.collapsingHeader("FPS MONITORING", ImGuiTreeNodeFlags.DefaultOpen)){
                 fpsChild();
@@ -56,11 +64,12 @@ public class Diagnostics {
         ImGui.end();
     }
 
-    public static void fpsChild(){
+    //Subclasses
+    public void fpsChild(){
         ImGui.text(fpsF);
         ImGui.text(frameTime);
     }
-    public static void ramChild(){
+    public void ramChild(){
         ImGui.text("RAM TRACKING:");
         if (ImGui.button("START")){
             System.out.println("Adding ram used");
@@ -86,8 +95,7 @@ public class Diagnostics {
         ImGui.text("Tracking stats:");
         ImGui.text(ramHeapTracked);
     }
-
-    public static void pollValues(){
+    public void pollValues(){
         timer += ImGui.getIO().getDeltaTime();
         if (timer >= INTERVAL_MS){
             timer -= INTERVAL_MS;

@@ -2,11 +2,15 @@ package org.example;
 
 
 import imgui.ImGui;
+import imgui.ImGuiIO;
 import imgui.ImGuiViewport;
+import imgui.ImVec2;
 import imgui.flag.ImGuiCol;
+import imgui.flag.ImGuiHoveredFlags;
 import imgui.flag.ImGuiViewportFlags;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
+import imgui.internal.ImGuiWindow;
 import org.example.UI.Diagnostics;
 import org.example.UI.Stuff;
 import org.example.monitoring.HWMonitor;
@@ -17,10 +21,17 @@ import org.lwjgl.glfw.GLFWMouseButtonCallback;
 import org.lwjgl.glfw.GLFWNativeWin32;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.windows.POINT;
 import org.lwjgl.system.windows.User32;
 
+import java.awt.*;
+
+import static org.example.monitoring.HWTasks.*;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.glfw.GLFWNativeWin32.glfwGetWin32Window;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.system.windows.User32.*;
 
 
 public class Main{
@@ -29,25 +40,38 @@ public class Main{
     private final ImGuiImplGlfw imguiGLFW = new ImGuiImplGlfw();
     private final ImGuiImplGl3 imGuiGl3 = new ImGuiImplGl3();
 
-    private boolean menuOpen = false;
-    private boolean lastKeyState = false;
-
     long hwnd;
-    // Constants for Win32 styles
 
     public static void main(String[] args){
         new Main().run();
     }
 
     private void mainLoop() {
-        glClearColor(.0f,.0f,.0f, 0.0f);
+        //Reused Variables
+        short x = 0, y = 0;
+        final double INTERVAL = 100;
+        final double INTERVAL_MS = INTERVAL/1000;
+        double timer = 0;
 
-        ImGuiViewport viewport = ImGui.getMainViewport();
-        viewport.addFlags(ImGuiViewportFlags.NoInputs);
+
+        glClearColor(.0f,.0f,.0f, 0.0f);
 
         while (!glfwWindowShouldClose(windowHandle)) {
             glfwPollEvents();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            //ImGui Pass through behavior
+            ImGuiIO io = ImGui.getIO();
+            ImGuiViewport viewport = ImGui.getMainViewport();
+            double delta = io.getDeltaTime();
+            boolean focused = GLFW.glfwGetWindowAttrib(windowHandle, GLFW.GLFW_FOCUSED) == GLFW.GLFW_TRUE;
+            boolean wantInput = io.getWantCaptureMouse();
+
+            if (!wantInput){
+                viewport.addFlags(ImGuiViewportFlags.NoInputs);
+            }
+
+            boolean inputAllow = viewport.hasFlags(ImGuiViewportFlags.NoInputs);
 
 
             // Put imgui stuff here
@@ -55,46 +79,42 @@ public class Main{
             imguiGLFW.newFrame();
             ImGui.newFrame();
 
-            //SYSTEM IO HANDLER
-            boolean wantIn = ImGui.getIO().getWantCaptureMouse();
-            boolean focused = glfwGetWindowAttrib(windowHandle, GLFW_FOCUSED) == GLFW_FALSE;
+            // MINI CLASSES
+            Diagnostics.run();
+            Stuff.run(   x + ", " + y + " " + inputAllow + " ");
+            // MINI CLASSES
 
-            if (!wantIn){
-                viewport.addFlags(ImGuiViewportFlags.NoInputs);
+            //Restore focus make sure to register all imgui UIS
+            timer += delta;
+            if (timer > INTERVAL_MS){
+                timer -= INTERVAL_MS;
+
+                //GET MOUSE XY globally
+                try (MemoryStack stack = MemoryStack.stackPush()){
+                    POINT mousePos = POINT.malloc(stack);
+                    User32.GetCursorPos(mousePos);
+
+                    x = (short)mousePos.x();
+                    y = (short)mousePos.y();
+                }
+
+                if(Diagnostics.inBounds(x,y) | Stuff.inBounds(x,y)){
+                    viewport.removeFlags(ImGuiViewportFlags.NoInputs);
+                    if (!focused){
+                    GLFW.glfwFocusWindow(windowHandle);
+                    }
+                }
             }
-            // MINI CLASSES
-            Diagnostics.render();
-            Stuff.render();
-            // MINI CLASSES
-
+            //
 
             ImGui.render();
             imGuiGl3.renderDrawData(ImGui.getDrawData());
             // Put imgui stuff here
 
-
-
             glfwSwapBuffers(windowHandle);
         }
     }
 
-    //Window click through
-    public void setClickThru(long hwnd, boolean clickThrough){
-        long exStyle = org.lwjgl.system.windows.User32.GetWindowLongPtr(hwnd, User32.GWL_EXSTYLE);
-
-        if (clickThrough) {
-            User32.SetWindowLongPtr(null, hwnd, User32.GWL_EXSTYLE, exStyle | User32.WS_EX_TRANSPARENT | User32.WS_EX_LAYERED);
-            glfwSetWindowAttrib(windowHandle, GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
-            System.out.println("Overlay is now CLICK-THROUGH");
-        } else {
-            User32.SetWindowLongPtr(null, hwnd, User32.GWL_EXSTYLE, exStyle & ~User32.WS_EX_TRANSPARENT);
-            glfwSetWindowAttrib(windowHandle, GLFW_MOUSE_PASSTHROUGH, GLFW_FALSE);
-            System.out.println("Overlay is now INTERACTIVE");
-        }
-
-        User32.SetWindowPos(null, hwnd, 0 , 0, 0, 0, 0,
-                User32.SWP_NOMOVE | User32.SWP_NOSIZE | User32.SWP_NOZORDER | User32.SWP_FRAMECHANGED);
-    }
 
     //Boiler Plate
     private void initWindow(){
@@ -111,7 +131,7 @@ public class Main{
         glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // Allows the frame to be transparent
         glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
         glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
-        //glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
         //Makes the window
         long primaryMonitor = GLFW.glfwGetPrimaryMonitor();
@@ -120,12 +140,12 @@ public class Main{
         int width = vidMode.width();
         int height = vidMode.height();
 
-        windowHandle = glfwCreateWindow(width, height-2, "Bare Bones ImGui", 0, 0);
+        windowHandle = glfwCreateWindow(width, height-1, "Bare Bones ImGui", 0, 0);
         if (windowHandle == 0) {
             throw new RuntimeException("Failed to create window");
         }
 
-        hwnd = GLFWNativeWin32.glfwGetWin32Window(windowHandle);
+        hwnd = glfwGetWin32Window(windowHandle);
 
         //PostConfig
         glfwSetWindowAttrib(windowHandle, GLFW_MOUSE_PASSTHROUGH, GLFW_TRUE);
@@ -134,10 +154,12 @@ public class Main{
         glfwSwapInterval(1); //VSYNC ON
         GL.createCapabilities(); //Hooks onto the correct OPENGL with your GPU
 
+        SetWindowLongPtr(null, hwnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);
 
         //Blending for semi transparent
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
         System.out.println("Started Window with no problems");
     }
@@ -151,6 +173,7 @@ public class Main{
         System.out.println("Started ImGui correctly, waiting for bindings:");
     }
     private void initHwMonitor(){
+        HWMonitor.addTask(HWT_RAM_USED);
     }
     public void run(){
         initWindow();
